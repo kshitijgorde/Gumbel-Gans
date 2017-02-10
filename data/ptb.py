@@ -4,13 +4,26 @@ import os
 package_directory = os.path.dirname(os.path.abspath(__file__))
 files = [os.path.join(package_directory, datafile) for datafile in ['ptb/valid.txt', 'ptb/train.txt', 'ptb/test.txt']]
 
+"""
+Example code for character-level prediction:
+
+    c = CharLevelPTB()
+    for b in c.get_train_batch(20):
+        # do stuff on batch b
+"""
 class IterableDataset:
     def __init__(self):
+        self.vocab_size = 0
         self.train = np.zeros((0, 0))
         self.valid = np.zeros((0, 0))
         self.test = np.zeros((0, 0))
 
-    def get_train_batch(self, batchsize, use_remainder_batch=False, shuffle=True):
+    def one_hot(self, idx):
+        oh = np.zeros(list(idx.shape) + [self.vocab_size])
+        oh[list(np.indices(oh.shape[:-1])) + [idx]] = 1
+        return oh
+
+    def get_train_batch(self, batchsize, use_remainder_batch=False, shuffle=True, one_hot=True):
         indices = np.arange(len(self.train))
 
         if shuffle:
@@ -18,12 +31,18 @@ class IterableDataset:
 
         if use_remainder_batch:
             for i in range(0, len(self.train), batchsize):
-                yield self.train[indices[i:i+batchsize]]
+                if one_hot:
+                    yield self.one_hot(self.train[indices[i:i+batchsize]])
+                else:
+                    yield self.train[indices[i:i+batchsize]]
         else:
             for i in range(0, len(self.train) - batchsize + 1, batchsize):
-                yield self.train[indices[i:i+batchsize]]
+                if one_hot:
+                    yield self.one_hot(self.train[indices[i:i+batchsize]])
+                else:
+                    yield self.train[indices[i:i+batchsize]]
 
-    def get_valid_batch(self, batchsize, use_remainder_batch=False, shuffle=False):
+    def get_valid_batch(self, batchsize, use_remainder_batch=False, shuffle=False, one_hot=True):
         indices = np.arange(len(self.valid))
 
         if shuffle:
@@ -31,12 +50,18 @@ class IterableDataset:
 
         if use_remainder_batch:
             for i in range(0, len(self.valid), batchsize):
-                yield self.valid[indices[i:i+batchsize]]
+                if one_hot:
+                    yield self.one_hot(self.valid[indices[i:i+batchsize]])
+                else:
+                    yield self.valid[indices[i:i+batchsize]]
         else:
             for i in range(0, len(self.valid) - batchsize + 1, batchsize):
-                yield self.valid[indices[i:i+batchsize]]
+                if one_hot:
+                    yield self.one_hot(self.valid[indices[i:i+batchsize]])
+                else:
+                    yield self.valid[indices[i:i+batchsize]]
 
-    def get_test_batch(self, batchsize, use_remainder_batch=False, shuffle=True):
+    def get_test_batch(self, batchsize, use_remainder_batch=False, shuffle=False, one_hot=True):
         indices = np.arange(len(self.test))
 
         if shuffle:
@@ -44,10 +69,16 @@ class IterableDataset:
 
         if use_remainder_batch:
             for i in range(0, len(self.test), batchsize):
-                yield self.test[indices[i:i+batchsize]]
+                if one_hot:
+                    yield self.one_hot(self.test[indices[i:i+batchsize]])
+                else:
+                    yield self.test[indices[i:i+batchsize]]
         else:
             for i in range(0, len(self.test) - batchsize + 1, batchsize):
-                yield self.test[indices[i:i+batchsize]]
+                if one_hot:
+                    yield self.one_hot(self.test[indices[i:i+batchsize]])
+                else:
+                    yield self.test[indices[i:i+batchsize]]
 
 class WordLevelPTB(IterableDataset):
     def __init__(self):
@@ -80,6 +111,7 @@ class WordLevelPTB(IterableDataset):
                             self.idx2word += [w]
 
         self.max_sent_length += 2 # since there's always an sos and eos token
+        self.vocab_size = len(self.idx2word)
 
 
     def load_data(self):
@@ -132,6 +164,7 @@ class CharLevelPTB(IterableDataset):
                             self.idx2char += [c]
 
         self.max_sent_length += 2 # since there's always an sos and eos token
+        self.vocab_size = len(self.idx2char)
 
     def load_data(self):
         self.train = np.zeros((self.line_lengths[files[1]], self.max_sent_length), dtype='uint16')

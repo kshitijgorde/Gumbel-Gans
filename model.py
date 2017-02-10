@@ -1,12 +1,10 @@
 import tensorflow as tf
-from tensorflow.python.ops import rnn_cell
+from tensorflow.contrib.rnn import LSTMCell
 from tensorflow.contrib import rnn
-from tensorflow.python.ops import seq2seq
+from tensorflow.contrib import legacy_seq2seq
 from gumbel_softmax import gumbel_softmax
 from constants import *
 import numpy as np
-
-cell = rnn_cell.LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
 
 initial_c = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
 initial_h = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
@@ -28,13 +26,13 @@ def generator(initial_c, initial_h):
         first_input[:, 0] = 1
         first_input = tf.constant(first_input, dtype=tf.float32)
 
-        cell = rnn_cell.LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
-        outputs, states = seq2seq.rnn_decoder(decoder_inputs=20 * [first_input],
+        cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
+        outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=20 * [first_input],
                                               initial_state=(initial_c, initial_h),
                                               cell=cell, loop_function=loop_function, scope=scope)
         logits = [tf.matmul(output, softmax_w) + softmax_b for output in outputs]
         ys = [gumbel_softmax(logit, temperature=0.2, hard=True) for logit in logits]
-        ys = tf.pack(ys, axis=1)
+        ys = tf.stack(ys, axis=1)
         return ys
 
 
@@ -42,7 +40,7 @@ def discriminator(x, reuse=False):
     with tf.variable_scope("discriminator") as scope:
         if reuse:
             scope.reuse_variables()
-        lstm = rnn_cell.LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
+        lstm = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
         softmax_w = tf.get_variable("softmax_w", [HIDDEN_STATE_SIZE, N_CLASSES])
         softmax_b = tf.get_variable("softmax_b", [N_CLASSES])
         lstm_outputs, _states = tf.nn.dynamic_rnn(lstm, x, dtype=tf.float32, scope=scope)
@@ -56,16 +54,16 @@ d_logits_ = discriminator(g, reuse=True)
 
 
 d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-    logits=d_logits, targets=tf.ones_like(d_logits)))
+    logits=d_logits, labels=tf.ones_like(d_logits)))
 d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-    logits=d_logits_, targets=tf.zeros_like(d_logits_)))
+    logits=d_logits_, labels=tf.zeros_like(d_logits_)))
 d_loss = d_loss_real + d_loss_fake
 
 d_loss_real_sum = tf.summary.scalar("d_loss_real", d_loss_real)
 d_loss_fake_sum = tf.summary.scalar("d_loss_fake", d_loss_fake)
 
 g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-    logits=d_logits_, targets=tf.ones_like(d_logits_)))
+    logits=d_logits_, labels=tf.ones_like(d_logits_)))
 
 g_loss_sum = tf.summary.scalar("g_loss", g_loss)
 d_loss_sum = tf.summary.scalar("d_loss", d_loss)

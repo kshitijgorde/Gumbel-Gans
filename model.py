@@ -6,6 +6,9 @@ from gumbel_softmax import gumbel_softmax
 from constants import *
 import numpy as np
 
+from data.ptb import CharLevelPTB
+from utils import sample_Z
+
 initial_c = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
 initial_h = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
 
@@ -28,8 +31,8 @@ def generator(initial_c, initial_h):
 
         cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
         outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=20 * [first_input],
-                                              initial_state=(initial_c, initial_h),
-                                              cell=cell, loop_function=loop_function, scope=scope)
+                                                     initial_state=(initial_c, initial_h),
+                                                     cell=cell, loop_function=loop_function, scope=scope)
         logits = [tf.matmul(output, softmax_w) + softmax_b for output in outputs]
         ys = [gumbel_softmax(logit, temperature=0.2, hard=True) for logit in logits]
         ys = tf.stack(ys, axis=1)
@@ -77,6 +80,35 @@ d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
 d_optim = tf.train.AdamOptimizer(LEARNING_RATE).minimize(d_loss, var_list=d_vars)
 g_optim = tf.train.AdamOptimizer(LEARNING_RATE).minimize(g_loss, var_list=g_vars)
 
-# TODO: Set up the adversarial training process
 with tf.Session() as sess:
     tf.initialize_all_variables().run()
+
+    for epoch in xrange(N_EPOCHS):
+        c = CharLevelPTB()
+        batch_idx = 0
+        for batch in c.get_train_batch(BATCH_SIZE):
+            c = sample_Z(BATCH_SIZE, HIDDEN_STATE_SIZE)
+            h = sample_Z(BATCH_SIZE, HIDDEN_STATE_SIZE)
+            _, d_loss_curr = sess.run([d_optim, d_loss], feed_dict={
+                inputs: batch,
+                initial_c: c,
+                initial_h: h
+            })
+
+            _, g_loss_curr = sess.run([g_optim, g_loss], feed_dict={
+                initial_c: c,
+                initial_h: h
+            })
+
+            _, g_loss_curr = sess.run([g_optim, g_loss], feed_dict={
+                initial_c: c,
+                initial_h: h
+            })
+
+            batch_idx += 1
+            print "Epoch: [%d] Batch: %d d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, d_loss_curr, g_loss_curr)
+
+    # TODO: sample generated text, write losses to logs and visualize them in TensorBoard
+
+
+

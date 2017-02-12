@@ -82,6 +82,8 @@ g_optim = tf.train.AdamOptimizer(LEARNING_RATE).minimize(g_loss, var_list=g_vars
 
 with tf.Session() as sess:
     tf.initialize_all_variables().run()
+    writer = tf.summary.FileWriter("./logs", sess.graph)
+    counter = 1
 
     for epoch in xrange(N_EPOCHS):
         c = CharLevelPTB()
@@ -89,26 +91,30 @@ with tf.Session() as sess:
         for batch in c.get_train_batch(BATCH_SIZE):
             z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
             c_z, h_z = np.vsplit(z, 2)
-            _, d_loss_curr = sess.run([d_optim, d_loss], feed_dict={
+            _, d_loss_curr, summary_str = sess.run([d_optim, d_loss, d_loss_sum], feed_dict={
                 inputs: batch,
                 initial_c: c_z,
                 initial_h: h_z
             })
+            writer.add_summary(summary_str, counter)
 
-            _, g_loss_curr = sess.run([g_optim, g_loss], feed_dict={
+            _, g_loss_curr, summary_str = sess.run([g_optim, g_loss, g_loss_sum], feed_dict={
                 initial_c: c_z,
                 initial_h: h_z
             })
+            # writer.add_summary(summary_str, counter)
 
-            _, g_loss_curr = sess.run([g_optim, g_loss], feed_dict={
+            _, g_loss_curr, summary_str = sess.run([g_optim, g_loss, g_loss_sum], feed_dict={
                 initial_c: c_z,
                 initial_h: h_z
             })
+            writer.add_summary(summary_str, counter)
 
             batch_idx += 1
+            counter += 1
             print "Epoch: [%d] Batch: %d d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, d_loss_curr, g_loss_curr)
 
-    # TODO: sample generated text, write losses to logs and visualize them in TensorBoard
+    # TODO: sample generated text
 
 
 

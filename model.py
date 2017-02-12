@@ -30,7 +30,7 @@ def generator(initial_c, initial_h):
         first_input = tf.constant(first_input, dtype=tf.float32)
 
         cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
-        outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=20 * [first_input],
+        outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=SEQ_LENGTH * [first_input],
                                                      initial_state=(initial_c, initial_h),
                                                      cell=cell, loop_function=loop_function, scope=scope)
         logits = [tf.matmul(output, softmax_w) + softmax_b for output in outputs]
@@ -87,22 +87,22 @@ with tf.Session() as sess:
         c = CharLevelPTB()
         batch_idx = 0
         for batch in c.get_train_batch(BATCH_SIZE):
-            c = sample_Z(BATCH_SIZE, HIDDEN_STATE_SIZE)
-            h = sample_Z(BATCH_SIZE, HIDDEN_STATE_SIZE)
+            z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+            c_z, h_z = np.vsplit(z, 2)
             _, d_loss_curr = sess.run([d_optim, d_loss], feed_dict={
                 inputs: batch,
-                initial_c: c,
-                initial_h: h
+                initial_c: c_z,
+                initial_h: h_z
             })
 
             _, g_loss_curr = sess.run([g_optim, g_loss], feed_dict={
-                initial_c: c,
-                initial_h: h
+                initial_c: c_z,
+                initial_h: h_z
             })
 
             _, g_loss_curr = sess.run([g_optim, g_loss], feed_dict={
-                initial_c: c,
-                initial_h: h
+                initial_c: c_z,
+                initial_h: h_z
             })
 
             batch_idx += 1

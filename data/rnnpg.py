@@ -15,7 +15,7 @@ Example code for character-level prediction:
 class CharLevelRNNPG(IterableDataset):
     def __init__(self):
         IterableDataset.__init__(self)
-        self.toks = [ '0', 'S', 'E']
+        self.toks = [ 'S', 'E']
         self.char2idx = {}
         self.idx2char = []
         self.sent_length = 20

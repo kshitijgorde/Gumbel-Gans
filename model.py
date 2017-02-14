@@ -7,7 +7,17 @@ from constants import *
 import numpy as np
 
 from data.ptb import CharLevelPTB
+from data.rnnpg import CharLevelRNNPG
 from utils import sample_Z
+
+if DATASET == 'ptb':
+    c = CharLevelPTB()
+    VOCAB_SIZE =PTB_VOCAB_SIZE
+    SEQ_LENGTH =PTB_SEQ_LENGTH
+elif DATASET == 'pg':
+    c = CharLevelRNNPG()
+    VOCAB_SIZE =PG_VOCAB_SIZE
+    SEQ_LENGTH =PG_SEQ_LENGTH
 
 initial_c = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
 initial_h = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
@@ -77,8 +87,8 @@ print [var.name for var in t_vars]
 g_vars = [var for var in t_vars if var.name.startswith('generator')]
 d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
 
-d_optim = tf.train.AdamOptimizer(LEARNING_RATE).minimize(d_loss, var_list=d_vars)
-g_optim = tf.train.AdamOptimizer(LEARNING_RATE).minimize(g_loss, var_list=g_vars)
+d_optim = tf.train.AdamOptimizer(LEARNING_RATE_D).minimize(d_loss, var_list=d_vars)
+g_optim = tf.train.AdamOptimizer(LEARNING_RATE_G).minimize(g_loss, var_list=g_vars)
 
 with tf.Session() as sess:
     tf.initialize_all_variables().run()
@@ -86,7 +96,6 @@ with tf.Session() as sess:
     counter = 1
 
     for epoch in xrange(N_EPOCHS):
-        c = CharLevelPTB()
         batch_idx = 0
         for batch in c.get_train_batch(BATCH_SIZE):
             z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)

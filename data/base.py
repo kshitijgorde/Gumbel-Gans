@@ -6,6 +6,7 @@ class IterableDataset(object):
         self.train = np.zeros((0, 0))
         self.valid = np.zeros((0, 0))
         self.test = np.zeros((0, 0))
+        self.start_char_idx = 0
 
     def one_hot(self, idx):
         oh = np.zeros(list(idx.shape) + [self.vocab_size])

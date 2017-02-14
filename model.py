@@ -36,7 +36,7 @@ def generator(initial_c, initial_h):
 
         # Create a dummy first input
         first_input = np.zeros((BATCH_SIZE, VOCAB_SIZE))
-        first_input[:, 0] = 1
+        first_input[:, c.start_char_idx] = 1
         first_input = tf.constant(first_input, dtype=tf.float32)
 
         cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)

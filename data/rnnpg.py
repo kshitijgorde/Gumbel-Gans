@@ -16,6 +16,7 @@ class CharLevelRNNPG(IterableDataset):
     def __init__(self):
         IterableDataset.__init__(self)
         self.toks = [ 'S', 'E']
+        self.start_char_idx = 0
         self.char2idx = {}
         self.idx2char = []
         self.sent_length = 20

@@ -16,6 +16,7 @@ class WordLevelPTB(IterableDataset):
     def __init__(self):
         IterableDataset.__init__(self)
         self.toks = [ '<zeropad>', '<sos>', '<eos>', '<unk>']
+        self.start_char_idx = 1
         self.word2idx = {}
         self.idx2word = []
         self.max_sent_length = 0
@@ -69,6 +70,7 @@ class CharLevelPTB(IterableDataset):
     def __init__(self):
         IterableDataset.__init__(self)
         self.toks = [ '0', 'S', 'E', 'U']
+        self.start_char_idx = 1
         self.char2idx = {}
         self.idx2char = []
         self.max_sent_length = 0

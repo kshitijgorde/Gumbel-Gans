@@ -1,6 +1,7 @@
 PG_VOCAB_SIZE = 5370
 PG_SEQ_LENGTH = 22
 
+# These are char level
 PTB_VOCAB_SIZE = 50
 PTB_SEQ_LENGTH = 492
 

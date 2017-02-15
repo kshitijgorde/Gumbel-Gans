@@ -53,8 +53,8 @@ def discriminator(x, reuse=False):
     with tf.variable_scope("discriminator") as scope:
         if reuse:
             scope.reuse_variables()
-        lstm = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
-        softmax_w = tf.get_variable("softmax_w", [HIDDEN_STATE_SIZE, N_CLASSES])
+        lstm = LSTMCell(HIDDEN_STATE_SIZE_D, state_is_tuple=True)
+        softmax_w = tf.get_variable("softmax_w", [HIDDEN_STATE_SIZE_D, N_CLASSES])
         softmax_b = tf.get_variable("softmax_b", [N_CLASSES])
         lstm_outputs, _states = tf.nn.dynamic_rnn(lstm, x, dtype=tf.float32, scope=scope)
         return tf.matmul(lstm_outputs[-1], softmax_w) + softmax_b

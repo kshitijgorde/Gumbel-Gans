@@ -1,4 +1,4 @@
-PG_VOCAB_SIZE = 5370
+PG_VOCAB_SIZE = 5369
 PG_SEQ_LENGTH = 21
 
 # These are char level

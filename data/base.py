@@ -70,3 +70,6 @@ class IterableDataset(object):
                 else:
                     yield self.test[indices[i:i+batchsize]]
 
+    def convert_batch_to_input_target_mask(self, b):
+        assert len(b.shape) == 3
+        return b[:, :-1, :], b[:, 1:, :], np.asarray([0] + [1]*(b.shape[0]-2), dtype='float16')

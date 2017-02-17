@@ -43,7 +43,7 @@ def generator(initial_c, initial_h, pretrain=False, inputs=None, targets=None, r
 
         # Create a dummy first input
         first_input = np.zeros((BATCH_SIZE, VOCAB_SIZE))
-        first_input[:, c.char2idx['S']] = 1
+        first_input[:, c.start_char_idx] = 1
         first_input = tf.constant(first_input, dtype=tf.float32)
 
         cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
@@ -97,7 +97,7 @@ d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
 g_pre_optim = tf.train.AdamOptimizer(LEARNING_RATE_PRE_G, name="Adam_g_pre").minimize(g_pre_loss, var_list=g_vars)
 g_pre_loss_sum = tf.summary.scalar("g_pre_loss", g_pre_loss)
 
-g = generator(initial_c, initial_h, reuse=True)
+g = generator(initial_c, initial_h, reuse=PRETRAIN_EPOCHS)
 d_logits_ = discriminator(g, reuse=True)
 
 
@@ -116,7 +116,7 @@ g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
 g_loss_sum = tf.summary.scalar("g_loss", g_loss)
 d_loss_sum = tf.summary.scalar("d_loss", d_loss)
 
-d_optim = tf.train.AdamOptimizer(LEARNING_RATE_D).minimize(d_loss, var_list=d_vars)
+d_optim = tf.train.GradientDescentOptimizer(LEARNING_RATE_D).minimize(d_loss, var_list=d_vars)
 g_optim = tf.train.AdamOptimizer(LEARNING_RATE_G, name="Adam_g").minimize(g_loss, var_list=g_vars)
 
 with tf.Session() as sess:

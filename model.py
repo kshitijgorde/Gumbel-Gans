@@ -10,7 +10,8 @@ from data.ptb import CharLevelPTB
 from data.rnnpg import CharLevelRNNPG
 from utils import sample_Z
 
-SEQ_LENGTH, VOCAB_SIZE = None, None
+SEQ_LENGTH, VOCAB_SIZE, c = None, None, None
+
 if DATASET == 'ptb':
     c = CharLevelPTB()
     VOCAB_SIZE =PTB_VOCAB_SIZE
@@ -23,12 +24,16 @@ elif DATASET == 'pg':
 initial_c = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
 initial_h = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
 
+inputs_pre = tf.placeholder(tf.float32, [None, SEQ_LENGTH-1, VOCAB_SIZE])
 inputs = tf.placeholder(tf.float32, [None, SEQ_LENGTH, VOCAB_SIZE])
 
+targets = tf.placeholder(tf.float32, [None, SEQ_LENGTH-1, VOCAB_SIZE])
 
-def generator(initial_c, initial_h, pretrain=False, inputs=None):
+
+def generator(initial_c, initial_h, pretrain=False, inputs=None, targets=None, reuse=False):
     with tf.variable_scope("generator") as scope:
-        scope.reuse_variables()
+        if reuse:
+            scope.reuse_variables()
         softmax_w = tf.get_variable("softmax_w", [HIDDEN_STATE_SIZE, VOCAB_SIZE])
         softmax_b = tf.get_variable("softmax_b", [VOCAB_SIZE])
 
@@ -43,15 +48,18 @@ def generator(initial_c, initial_h, pretrain=False, inputs=None):
 
         cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
         if pretrain:
+            inputs = tf.unstack(inputs, axis=1)
             outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=inputs,
                                                          initial_state=(initial_c, initial_h),
                                                          cell=cell, loop_function=None, scope=scope)
             logits = [tf.matmul(output, softmax_w) + softmax_b for output in outputs]
-            loss = legacy_seq2seq.sequence_loss_by_example(logits,
-                                                           [tf.reshape(targets, [-1])],
-                                                           [tf.ones([BATCH_SIZE * SEQ_LENGTH])],
-                                                           VOCAB_SIZE)
-            return  loss
+
+            targets = tf.unstack(tf.transpose(targets, [1, 0, 2]))
+
+            loss = [tf.nn.softmax_cross_entropy_with_logits(labels=target, logits=logit)
+                    for target, logit in zip(targets[1:], logits[1:])] # ignore start token
+            loss = tf.reduce_mean(loss)
+            return loss
 
         else:
             outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=SEQ_LENGTH * [first_input],
@@ -75,20 +83,22 @@ def discriminator(x, reuse=False):
         lstm_outputs, _states = tf.nn.dynamic_rnn(lstm, x, dtype=tf.float32, scope=scope)
         return tf.matmul(lstm_outputs[-1], softmax_w) + softmax_b
 
+
+
+# Evaluate the losses
+d_logits = discriminator(inputs)
+g_pre_loss = generator(initial_c, initial_h, pretrain=True, inputs=inputs_pre, targets=targets)
+
 # Optimizers
 t_vars = tf.trainable_variables()
 print [var.name for var in t_vars]
 g_vars = [var for var in t_vars if var.name.startswith('generator')]
 d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
 
-# Evaluate the losses
-d_logits = discriminator(inputs)
+g_pre_optim = tf.train.AdamOptimizer(LEARNING_RATE_PRE_G, name="Adam_g_pre").minimize(g_pre_loss, var_list=g_vars)
+g_pre_loss_sum = tf.summary.scalar("g_pre_loss", g_pre_loss)
 
-if PRETRAIN_EPOCHS:
-    g_pre_loss = generator(initial_c, initial_h)
-    g_pre_optim = tf.train.AdamOptimizer(LEARNING_RATE_PRE_G).minimize(g_pre_loss, var_list=g_vars)
-
-g = generator(initial_c, initial_h)
+g = generator(initial_c, initial_h, reuse=True)
 d_logits_ = discriminator(g, reuse=True)
 
 
@@ -108,21 +118,32 @@ g_loss_sum = tf.summary.scalar("g_loss", g_loss)
 d_loss_sum = tf.summary.scalar("d_loss", d_loss)
 
 d_optim = tf.train.AdamOptimizer(LEARNING_RATE_D).minimize(d_loss, var_list=d_vars)
-g_optim = tf.train.AdamOptimizer(LEARNING_RATE_G).minimize(g_loss, var_list=g_vars)
+g_optim = tf.train.AdamOptimizer(LEARNING_RATE_G, name="Adam_g").minimize(g_loss, var_list=g_vars)
 
 with tf.Session() as sess:
     tf.initialize_all_variables().run()
     writer = tf.summary.FileWriter("./logs", sess.graph)
     counter = 1
 
-    for pre_epochs in xrange(PRETRAIN_EPOCHS):
-        _, g_lossp_curr = sess.run([g_pre_optim, g_pre_loss], feed_dict={
-            inputs: batch,
-            initial_c: c_z,
-            initial_h: h_z,
-            targets: #TODO
-        })
+    for pre_epoch in xrange(PRETRAIN_EPOCHS):
+        batch_idx = 1
+        for batch in c.get_train_batch(BATCH_SIZE):
+            batch = c.convert_batch_to_input_target(batch)
+            batch_input, batch_targets = batch
 
+            z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+            c_z, h_z = np.vsplit(z, 2)
+            _, g_pre_loss_curr, summary_str = sess.run([g_pre_optim, g_pre_loss, g_pre_loss_sum], feed_dict={
+                inputs_pre: batch_input,
+                initial_c: c_z,
+                initial_h: h_z,
+                targets: batch_targets
+            })
+            writer.add_summary(summary_str, counter)
+            batch_idx += 1
+            print "Epoch: [%d] Batch: %d, g_pre_loss: %.8f" % (pre_epoch, batch_idx, g_pre_loss_curr)
+
+    counter = 1
     for epoch in xrange(N_EPOCHS):
         batch_idx = 0
         for batch in c.get_train_batch(BATCH_SIZE):
@@ -134,9 +155,6 @@ with tf.Session() as sess:
                 initial_h: h_z
             })
             writer.add_summary(summary_str, counter)
-
-            if epoch < PRETRAIN_EPOCHS:
-
 
             _, g_loss_curr, summary_str = sess.run([g_optim, g_loss, g_loss_sum], feed_dict={
                 initial_c: c_z,

@@ -43,7 +43,7 @@ def generator(initial_c, initial_h, pretrain=False, inputs=None, targets=None, r
 
         # Create a dummy first input
         first_input = np.zeros((BATCH_SIZE, VOCAB_SIZE))
-        first_input[:, c.start_char_idx] = 1
+        first_input[:, c.char2idx['S']] = 1
         first_input = tf.constant(first_input, dtype=tf.float32)
 
         cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
@@ -57,7 +57,7 @@ def generator(initial_c, initial_h, pretrain=False, inputs=None, targets=None, r
             targets = tf.unstack(tf.transpose(targets, [1, 0, 2]))
 
             loss = [tf.nn.softmax_cross_entropy_with_logits(labels=target, logits=logit)
-                    for target, logit in zip(targets[1:], logits[1:])] # ignore start token
+                    for target, logit in zip(targets, logits)] # ignore start token
             loss = tf.reduce_mean(loss)
             return loss
 
@@ -82,7 +82,6 @@ def discriminator(x, reuse=False):
         softmax_b = tf.get_variable("softmax_b", [N_CLASSES])
         lstm_outputs, _states = tf.nn.dynamic_rnn(lstm, x, dtype=tf.float32, scope=scope)
         return tf.matmul(lstm_outputs[-1], softmax_w) + softmax_b
-
 
 
 # Evaluate the losses

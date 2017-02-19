@@ -2,6 +2,7 @@ from MLE_SeqGAN.gen_dataloader import Gen_Data_loader, Likelihood_data_loader
 from MLE_SeqGAN.pretrain_experiment import target_loss
 from MLE_SeqGAN.target_lstm import TARGET_LSTM
 from base import IterableDataset
+import numpy as np
 import os
 import cPickle
 
@@ -16,26 +17,28 @@ START_TOKEN = 0
 VOCAB_SIZE = 5000
 
 class OracleDataloader(IterableDataset):
-    def __init__(self, batchsize, positive_file=oracle_train_file):
+    def __init__(self, batchsize, vocab_size, positive_file=oracle_train_file):
         IterableDataset.__init__(self)
         self.batchsize = batchsize
+        self.vocab_size = vocab_size
         self.gen_data_loader = Gen_Data_loader(self.batchsize)
         self.gen_data_loader.create_batches(positive_file)
         self.start_char_idx = START_TOKEN
 
-    def get_train_batch(self):
+    def get_train_batch(self, _, one_hot=True):
 
         self.gen_data_loader.reset_pointer()
 
         for it in xrange(self.gen_data_loader.num_batch):
             batch = self.gen_data_loader.next_batch()
-            yield np.append([[START_TOKEN]]*self.batchsize, batch, axis=1)
+
+            if one_hot:
+                yield self.one_hot(np.append([[START_TOKEN]]*self.batchsize, batch, axis=1))
+            else:
+                yield np.append([[START_TOKEN]]*self.batchsize, batch, axis=1)
 
     def get_mask(self):
         return super(OracleDataloader, self).get_mask(self.batchsize)
-
-    def convert_batch_to_input_target(self):
-        return super(OracleDataloader, self).convert_batch_to_input_target(self.batchsize)
 
 class OracleVerifier(object):
     """

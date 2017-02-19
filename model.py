@@ -22,7 +22,7 @@ elif DATASET == 'pg':
     VOCAB_SIZE = PG_VOCAB_SIZE
     SEQ_LENGTH = PG_SEQ_LENGTH
 elif DATASET == 'oracle':
-    c = OracleDataloader(BATCH_SIZE)
+    c = OracleDataloader(BATCH_SIZE, ORACLE_VOCAB_SIZE)
     VOCAB_SIZE = ORACLE_VOCAB_SIZE
     SEQ_LENGTH = ORACLE_SEQ_LENGTH
     TEST_SIZE = ORACLE_TEST_SIZE
@@ -122,8 +122,8 @@ d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
 g_pre_optim = tf.train.AdamOptimizer(LEARNING_RATE_PRE_G, name="Adam_g_pre").minimize(g_pre_loss, var_list=g_vars)
 g_pre_loss_sum = tf.summary.scalar("g_pre_loss", g_pre_loss)
 
-g = generator(initial_c, initial_h, reuse=PRETRAIN_EPOCHS)
-g_test = generator(initial_c, initial_h, reuse=PRETRAIN_EPOCHS, mode='test')
+g = generator(initial_c, initial_h, reuse=True)
+g_test = generator(initial_c, initial_h, reuse=True, mode='test')
 d_logits_ = discriminator(g, reuse=True)
 
 

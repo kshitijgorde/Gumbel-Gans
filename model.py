@@ -31,7 +31,7 @@ initial_c = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
 initial_h = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
 
 inputs_pre = tf.placeholder(tf.float32, [None, SEQ_LENGTH-1, VOCAB_SIZE])
-inputs = tf.placeholder(tf.float32, [None, SEQ_LENGTH, VOCAB_SIZE])
+inputs = tf.placeholder(tf.float32, [None, SEQ_LENGTH-1, VOCAB_SIZE])
 
 targets = tf.placeholder(tf.float32, [None, SEQ_LENGTH-1, VOCAB_SIZE])
 
@@ -74,7 +74,7 @@ def generator(initial_c, initial_h, mode='gan', inputs=None, targets=None, reuse
             logits = [tf.matmul(output, softmax_w) + softmax_b for output in outputs]
             return tf.transpose(tf.argmax(logits, axis=2))
         else:
-            outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=SEQ_LENGTH * [first_input],
+            outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=(SEQ_LENGTH-1) * [first_input],
                                                          initial_state=(initial_c, initial_h),
                                                          cell=cell, loop_function=loop_function, scope=scope)
 
@@ -181,10 +181,15 @@ with tf.Session() as sess:
     for epoch in xrange(N_EPOCHS):
         batch_idx = 0
         for batch in c.get_train_batch(BATCH_SIZE):
+
+            # To remove start token, since generator doesn't generate it either
+            batch = c.convert_batch_to_input_target(batch)
+            _, batch_targets = batch
+
             z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
             c_z, h_z = np.vsplit(z, 2)
             _, d_loss_curr, summary_str = sess.run([d_optim, d_loss, d_loss_sum], feed_dict={
-                inputs: batch,
+                inputs: batch_targets,
                 initial_c: c_z,
                 initial_h: h_z
             })

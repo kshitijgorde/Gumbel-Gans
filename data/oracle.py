@@ -10,6 +10,7 @@ import cPickle
 package_directory = os.path.dirname(os.path.abspath(__file__))
 oracle_train_file = os.path.join(package_directory, 'MLE_SeqGAN/save/real_data.txt')
 oracle_params_file = os.path.join(package_directory, 'MLE_SeqGAN/save/target_params.pkl')
+oracle_eval_file = os.path.join(package_directory, 'MLE_SeqGAN/target_generate/gen_data.txt')
 
 START_TOKEN = 0
 VOCAB_SIZE = 5000
@@ -49,14 +50,17 @@ class OracleVerifier(object):
 
         print o.get_loss(sample_file)
     """
-    def __init__(self, batchsize, session):
+    def __init__(self, batchsize, session, eval_file=oracle_eval_file):
         self.batchsize = batchsize
         target_params = cPickle.load(open(oracle_params_file))
         self.target_lstm = TARGET_LSTM(VOCAB_SIZE, 32, 32, 32, 20, 0, target_params)
         self.likelihood_data_loader = Likelihood_data_loader(self.batchsize)
         self.sess = session
+        self.eval_file = oracle_eval_file
 
-    def get_loss(self, eval_file):
+    def get_loss(self, eval_file=None):
+        if not eval_file:
+            eval_file = self.eval_file
         self.likelihood_data_loader.create_batches(eval_file)
         test_loss = target_loss(self.sess, self.target_lstm, self.likelihood_data_loader)
         return test_loss

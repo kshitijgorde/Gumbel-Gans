@@ -8,18 +8,24 @@ import numpy as np
 
 from data.ptb import CharLevelPTB
 from data.rnnpg import CharLevelRNNPG
+from data.oracle import OracleDataloader, OracleVerifier
 from utils import sample_Z
 
-SEQ_LENGTH, VOCAB_SIZE, c = None, None, None
+SEQ_LENGTH, VOCAB_SIZE, TEST_SIZE, c = None, None, None, None
 
 if DATASET == 'ptb':
     c = CharLevelPTB()
-    VOCAB_SIZE =PTB_VOCAB_SIZE
-    SEQ_LENGTH =PTB_SEQ_LENGTH
+    VOCAB_SIZE = PTB_VOCAB_SIZE
+    SEQ_LENGTH = PTB_SEQ_LENGTH
 elif DATASET == 'pg':
     c = CharLevelRNNPG()
-    VOCAB_SIZE =PG_VOCAB_SIZE
-    SEQ_LENGTH =PG_SEQ_LENGTH
+    VOCAB_SIZE = PG_VOCAB_SIZE
+    SEQ_LENGTH = PG_SEQ_LENGTH
+elif DATASET == 'oracle':
+    c = OracleDataloader(BATCH_SIZE)
+    VOCAB_SIZE = ORACLE_VOCAB_SIZE
+    SEQ_LENGTH = ORACLE_SEQ_LENGTH
+    TEST_SIZE = ORACLE_TEST_SIZE
 
 initial_c = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
 initial_h = tf.placeholder(tf.float32, shape=(None, HIDDEN_STATE_SIZE))
@@ -30,7 +36,8 @@ inputs = tf.placeholder(tf.float32, [None, SEQ_LENGTH, VOCAB_SIZE])
 targets = tf.placeholder(tf.float32, [None, SEQ_LENGTH-1, VOCAB_SIZE])
 
 
-def generator(initial_c, initial_h, pretrain=False, inputs=None, targets=None, reuse=False):
+def generator(initial_c, initial_h, mode='gan', inputs=None, targets=None, reuse=False):
+    assert mode in ['test', 'pretrain', 'gan']
     with tf.variable_scope("generator") as scope:
         if reuse:
             scope.reuse_variables()
@@ -47,7 +54,7 @@ def generator(initial_c, initial_h, pretrain=False, inputs=None, targets=None, r
         first_input = tf.constant(first_input, dtype=tf.float32)
 
         cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True)
-        if pretrain:
+        if mode == 'pretrain':
             inputs = tf.unstack(inputs, axis=1)
             outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=inputs,
                                                          initial_state=(initial_c, initial_h),
@@ -60,7 +67,12 @@ def generator(initial_c, initial_h, pretrain=False, inputs=None, targets=None, r
                     for target, logit in zip(targets, logits)] # ignore start token
             loss = tf.reduce_mean(loss)
             return loss
-
+        elif mode == 'test':
+            outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=(SEQ_LENGTH-1) * [first_input],
+                                                         initial_state=(initial_c, initial_h),
+                                                         cell=cell, loop_function=loop_function, scope=scope)
+            logits = [tf.matmul(output, softmax_w) + softmax_b for output in outputs]
+            return tf.transpose(tf.argmax(logits, axis=2))
         else:
             outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=SEQ_LENGTH * [first_input],
                                                          initial_state=(initial_c, initial_h),
@@ -83,10 +95,23 @@ def discriminator(x, reuse=False):
         lstm_outputs, _states = tf.nn.dynamic_rnn(lstm, x, dtype=tf.float32, scope=scope)
         return tf.matmul(lstm_outputs[-1], softmax_w) + softmax_b
 
+def generate_test_file(g_test, sess, eval_file):
+    z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+    c_z, h_z = np.vsplit(z, 2)
+
+    with open(eval_file, 'w') as f:
+        for _ in xrange(TEST_SIZE/BATCH_SIZE):
+            oracle_out = sess.run([g_test], feed_dict={
+                initial_c: c_z,
+                initial_h: h_z
+            })
+            for l in oracle_out[0]:
+                buffer = ' '.join([str(x) for x in l]) + '\n'
+                f.write(buffer)
 
 # Evaluate the losses
 d_logits = discriminator(inputs)
-g_pre_loss = generator(initial_c, initial_h, pretrain=True, inputs=inputs_pre, targets=targets)
+g_pre_loss = generator(initial_c, initial_h, mode='pretrain', inputs=inputs_pre, targets=targets)
 
 # Optimizers
 t_vars = tf.trainable_variables()
@@ -98,6 +123,7 @@ g_pre_optim = tf.train.AdamOptimizer(LEARNING_RATE_PRE_G, name="Adam_g_pre").min
 g_pre_loss_sum = tf.summary.scalar("g_pre_loss", g_pre_loss)
 
 g = generator(initial_c, initial_h, reuse=PRETRAIN_EPOCHS)
+g_test = generator(initial_c, initial_h, reuse=PRETRAIN_EPOCHS, mode='test')
 d_logits_ = discriminator(g, reuse=True)
 
 
@@ -120,9 +146,15 @@ d_optim = tf.train.GradientDescentOptimizer(LEARNING_RATE_D).minimize(d_loss, va
 g_optim = tf.train.AdamOptimizer(LEARNING_RATE_G, name="Adam_g").minimize(g_loss, var_list=g_vars)
 
 with tf.Session() as sess:
+    if DATASET == 'oracle':
+        t=OracleVerifier(BATCH_SIZE, sess)
     tf.initialize_all_variables().run()
     writer = tf.summary.FileWriter("./logs", sess.graph)
     counter = 1
+
+    if DATASET == 'oracle':
+        generate_test_file(g_test, sess, t.eval_file)
+        print "NLL Oracle Loss before training: %.8f" % t.get_loss()
 
     for pre_epoch in xrange(PRETRAIN_EPOCHS):
         batch_idx = 1
@@ -141,6 +173,9 @@ with tf.Session() as sess:
             writer.add_summary(summary_str, counter)
             batch_idx += 1
             print "Epoch: [%d] Batch: %d, g_pre_loss: %.8f" % (pre_epoch, batch_idx, g_pre_loss_curr)
+        if DATASET == 'oracle':
+            generate_test_file(g_test, sess, t.eval_file)
+            print "NLL Oracle Loss after pre-train epoch %d: %.8f" % (pre_epoch, t.get_loss())
 
     counter = 1
     for epoch in xrange(N_EPOCHS):
@@ -170,6 +205,10 @@ with tf.Session() as sess:
             batch_idx += 1
             counter += 1
             print "Epoch: [%d] Batch: %d d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, d_loss_curr, g_loss_curr)
+
+        if DATASET == 'oracle':
+            generate_test_file(g_test, sess, t.eval_file)
+            print "NLL Oracle Loss after epoch %d: %.8f" % (epoch, t.get_loss())
 
     # TODO: sample generated text
 

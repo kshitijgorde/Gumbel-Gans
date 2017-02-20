@@ -11,7 +11,7 @@ import cPickle
 package_directory = os.path.dirname(os.path.abspath(__file__))
 oracle_train_file = os.path.join(package_directory, 'MLE_SeqGAN/save/real_data.txt')
 oracle_params_file = os.path.join(package_directory, 'MLE_SeqGAN/save/target_params.pkl')
-oracle_eval_file = os.path.join(package_directory, 'MLE_SeqGAN/target_generate/gen_data.txt')
+oracle_eval_file = os.path.join(package_directory, 'MLE_SeqGAN/target_generate/gen_data_' + str(os.getpid()) + '.txt')
 
 START_TOKEN = 0
 VOCAB_SIZE = 5000

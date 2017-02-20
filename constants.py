@@ -22,7 +22,6 @@ N_EPOCHS = 7
 
 PRETRAIN_EPOCHS = 5
 LEARNING_RATE_PRE_G = 0.01
-LEARNING_RATE_PRE_D = 0.01
 
 # sanity checks:
 DATASET_LIST = ['ptb', 'pg', 'oracle']

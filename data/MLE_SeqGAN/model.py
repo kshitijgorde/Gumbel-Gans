@@ -65,7 +65,7 @@ class LSTM(object):
             loop_vars=(tf.constant(0, dtype=tf.int32),
                        tf.nn.embedding_lookup(self.g_embeddings, self.start_token), self.h0, gen_o, gen_x))
 
-        self.gen_x = self.gen_x.pack()  # seq_length x batch_size
+        self.gen_x = self.gen_x.stack()  # seq_length x batch_size
         self.gen_x = tf.transpose(self.gen_x, perm=[1, 0])  # batch_size x seq_length
 
         # supervised pretraining for generator
@@ -75,7 +75,7 @@ class LSTM(object):
 
         ta_emb_x = tensor_array_ops.TensorArray(
             dtype=tf.float32, size=self.sequence_length)
-        ta_emb_x = ta_emb_x.unpack(self.processed_x)
+        ta_emb_x = ta_emb_x.unstack(self.processed_x)
 
         def _pretrain_recurrence(i, x_t, h_tm1, g_predictions):
             h_t = self.g_recurrent_unit(x_t, h_tm1)
@@ -92,7 +92,7 @@ class LSTM(object):
                        self.h0, g_predictions))
 
         self.g_predictions = tf.transpose(
-            self.g_predictions.pack(), perm=[1, 0, 2])  # batch_size x seq_length x vocab_size
+            self.g_predictions.stack(), perm=[1, 0, 2])  # batch_size x seq_length x vocab_size
 
         # pretraining loss
         self.pretrain_loss = -tf.reduce_sum(

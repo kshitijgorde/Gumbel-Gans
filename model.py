@@ -151,7 +151,7 @@ with tf.Session() as sess:
     if DATASET == 'oracle':
         t=OracleVerifier(BATCH_SIZE, sess)
     tf.initialize_all_variables().run()
-    writer = tf.summary.FileWriter("./logs", sess.graph)
+    writer = tf.summary.FileWriter(LOG_LOCATION, sess.graph)
     counter = 1
 
     saver = tf.train.Saver()

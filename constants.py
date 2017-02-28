@@ -27,9 +27,11 @@ PRETRAIN_CHK_FOLDER = './checkpoints/'
 SAVE_FILE_PRETRAIN = PRETRAIN_CHK_FOLDER + 'or_p_h32_le-3.chk'
 LOAD_FILE_PRETRAIN = SAVE_FILE_PRETRAIN
 
-GAN_CHK_FOLDER = './checkpoints/'
-SAVE_FILE_GAN = GAN_CHK_FOLDER + 'or_g32_d32_le-2.chk'
+GAN_CHK_FOLDER = './checkpoints/or_g32_d32_le-3/'
+SAVE_FILE_GAN = GAN_CHK_FOLDER + 'chk'
 LOAD_FILE_GAN = SAVE_FILE_GAN
+
+LOG_LOCATION = './logs/or_g32_d32_le-3/'
 
 # sanity checks:
 DATASET_LIST = ['ptb', 'pg', 'oracle']
@@ -40,3 +42,4 @@ from utils import *
 
 create_dir_if_not_exists('/'.join(LOAD_FILE_PRETRAIN.split('/')[:-1]))
 create_dir_if_not_exists('/'.join(LOAD_FILE_GAN.split('/')[:-1]))
+create_dir_if_not_exists(LOG_LOCATION)

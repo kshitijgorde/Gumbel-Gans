@@ -23,7 +23,18 @@ N_EPOCHS = 0
 PRETRAIN_EPOCHS = 20
 LEARNING_RATE_PRE_G = 0.001
 
+SAVE_FILE_PRETRAIN = './checkpoints/or_p_h32_le-3.chk'
+LOAD_FILE_PRETRAIN = SAVE_FILE_PRETRAIN
+
+SAVE_FILE_GAN = './checkpoints/or_g32_d32_le-2.chk'
+LOAD_FILE_GAN = SAVE_FILE_GAN
+
 # sanity checks:
 DATASET_LIST = ['ptb', 'pg', 'oracle']
 assert DATASET in DATASET_LIST
 assert ORACLE_TEST_SIZE%BATCH_SIZE == 0
+
+import utils
+
+create_dir_if_not_exists('/'.join(LOAD_FILE_PRETRAIN.split('/')[:-1]))
+create_dir_if_not_exists('/'.join(LOAD_FILE_GAN.split('/')[:-1]))

@@ -6,6 +6,7 @@ from tensorflow.contrib import legacy_seq2seq
 from gumbel_softmax import gumbel_softmax
 from constants import *
 import numpy as np
+import os
 
 from data.ptb import CharLevelPTB
 from data.rnnpg import CharLevelRNNPG
@@ -153,30 +154,38 @@ with tf.Session() as sess:
     writer = tf.summary.FileWriter("./logs", sess.graph)
     counter = 1
 
-    if DATASET == 'oracle':
-        generate_test_file(g_test, sess, t.eval_file)
-        print "NLL Oracle Loss before training: %.8f" % t.get_loss()
+    saver = tf.train.Saver()
 
-    for pre_epoch in xrange(PRETRAIN_EPOCHS):
-        batch_idx = 1
-        for batch in c.get_train_batch(BATCH_SIZE):
-            batch = c.convert_batch_to_input_target(batch)
-            batch_input, batch_targets = batch
-
-            z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
-            c_z, h_z = np.vsplit(z, 2)
-            _, g_pre_loss_curr, summary_str = sess.run([g_pre_optim, g_pre_loss, g_pre_loss_sum], feed_dict={
-                inputs_pre: batch_input,
-                initial_c: c_z,
-                initial_h: h_z,
-                targets: batch_targets
-            })
-            writer.add_summary(summary_str, counter)
-            batch_idx += 1
-            print "Epoch: [%d] Batch: %d, g_pre_loss: %.8f" % (pre_epoch, batch_idx, g_pre_loss_curr)
+    if LOAD_FILE_PRETRAIN and os.path.exists(LOAD_FILE_PRETRAIN):
+        saver.restore(sess, LOAD_FILE_PRETRAIN)
+    else:
         if DATASET == 'oracle':
             generate_test_file(g_test, sess, t.eval_file)
-            print "NLL Oracle Loss after pre-train epoch %d: %.8f" % (pre_epoch, t.get_loss())
+            print "NLL Oracle Loss before training: %.8f" % t.get_loss()
+
+        for pre_epoch in xrange(PRETRAIN_EPOCHS):
+            batch_idx = 1
+            for batch in c.get_train_batch(BATCH_SIZE):
+                batch = c.convert_batch_to_input_target(batch)
+                batch_input, batch_targets = batch
+
+                z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                c_z, h_z = np.vsplit(z, 2)
+                _, g_pre_loss_curr, summary_str = sess.run([g_pre_optim, g_pre_loss, g_pre_loss_sum], feed_dict={
+                    inputs_pre: batch_input,
+                    initial_c: c_z,
+                    initial_h: h_z,
+                    targets: batch_targets
+                })
+                writer.add_summary(summary_str, counter)
+                batch_idx += 1
+                print "Epoch: [%d] Batch: %d, g_pre_loss: %.8f" % (pre_epoch, batch_idx, g_pre_loss_curr)
+            if DATASET == 'oracle':
+                generate_test_file(g_test, sess, t.eval_file)
+                print "NLL Oracle Loss after pre-train epoch %d: %.8f" % (pre_epoch, t.get_loss())
+
+            if SAVE_FILE_PRETRAIN:
+                saver.save(sess, SAVE_FILE_PRETRAIN)
 
     counter = 1
     for epoch in xrange(N_EPOCHS):

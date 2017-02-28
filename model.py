@@ -156,8 +156,11 @@ with tf.Session() as sess:
 
     saver = tf.train.Saver()
 
-    if LOAD_FILE_PRETRAIN and os.path.exists(LOAD_FILE_PRETRAIN):
+    if LOAD_FILE_PRETRAIN and tf.train.latest_checkpoint(PRETRAIN_CHK_FOLDER) == LOAD_FILE_PRETRAIN:
+        # saver = tf.train.import_meta_graph(LOAD_FILE_PRETRAIN + '.meta')
         saver.restore(sess, LOAD_FILE_PRETRAIN)
+        generate_test_file(g_test, sess, t.eval_file)
+        print "NLL Oracle Loss after loading model: %.8f" % t.get_loss()
     else:
         if DATASET == 'oracle':
             generate_test_file(g_test, sess, t.eval_file)

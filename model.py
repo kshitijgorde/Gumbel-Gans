@@ -182,7 +182,7 @@ with tf.Session() as sess:
                 })
                 writer.add_summary(summary_str, counter)
                 batch_idx += 1
-                print "Epoch: [%d] Batch: %d, g_pre_loss: %.8f" % (pre_epoch, batch_idx, g_pre_loss_curr)
+                # print "Epoch: [%d] Batch: %d, g_pre_loss: %.8f" % (pre_epoch, batch_idx, g_pre_loss_curr)
             if DATASET == 'oracle':
                 generate_test_file(g_test, sess, t.eval_file)
                 print "NLL Oracle Loss after pre-train epoch %d: %.8f" % (pre_epoch, t.get_loss())
@@ -194,6 +194,7 @@ with tf.Session() as sess:
     for epoch in xrange(N_EPOCHS):
         batch_idx = 0
         for batch in c.get_train_batch(BATCH_SIZE):
+            batch_idx += 1
 
             # To remove start token, since generator doesn't generate it either
             batch = c.convert_batch_to_input_target(batch)
@@ -208,21 +209,19 @@ with tf.Session() as sess:
             })
             writer.add_summary(summary_str, counter)
 
-            _, g_loss_curr, summary_str = sess.run([g_optim, g_loss, g_loss_sum], feed_dict={
-                initial_c: c_z,
-                initial_h: h_z
-            })
-            # writer.add_summary(summary_str, counter)
+            if batch_idx % 5 != 0:
+                continue
 
+            z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+            c_z, h_z = np.vsplit(z, 2)
             _, g_loss_curr, summary_str = sess.run([g_optim, g_loss, g_loss_sum], feed_dict={
                 initial_c: c_z,
                 initial_h: h_z
             })
             writer.add_summary(summary_str, counter)
 
-            batch_idx += 1
             counter += 1
-            print "Epoch: [%d] Batch: %d d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, d_loss_curr, g_loss_curr)
+            #print "Epoch: [%d] Batch: %d d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, d_loss_curr, g_loss_curr)
 
         if DATASET == 'oracle':
             generate_test_file(g_test, sess, t.eval_file)

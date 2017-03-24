@@ -159,12 +159,51 @@ with tf.Session() as sess:
     if LOAD_FILE_PRETRAIN and tf.train.latest_checkpoint(PRETRAIN_CHK_FOLDER) == LOAD_FILE_PRETRAIN:
         # saver = tf.train.import_meta_graph(LOAD_FILE_PRETRAIN + '.meta')
         saver.restore(sess, LOAD_FILE_PRETRAIN)
-        generate_test_file(g_test, sess, t.eval_file)
-        print "NLL Oracle Loss after loading model: %.8f" % t.get_loss()
+        if DATASET == 'oracle':
+            generate_test_file(g_test, sess, t.eval_file)
+            print "NLL Oracle Loss after loading model: %.8f" % t.get_loss()
+        else:
+            batch_idx = 0
+            ltot = 0.
+            for batch in c.get_test_batch(BATCH_SIZE):
+                batch = c.convert_batch_to_input_target(batch)
+                batch_input, batch_targets = batch
+
+                z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                c_z, h_z = np.vsplit(z, 2)
+                g_pre_loss_curr, summary_str = sess.run([g_pre_loss, g_pre_loss_sum], feed_dict={
+                    inputs_pre: batch_input,
+                    initial_c: c_z,
+                    initial_h: h_z,
+                    targets: batch_targets
+                })
+                ltot += g_pre_loss_curr
+                writer.add_summary(summary_str, counter)
+                batch_idx += 1
+            print "Test g_pre_loss: %.8f" % (ltot/batch_idx)
     else:
         if DATASET == 'oracle':
             generate_test_file(g_test, sess, t.eval_file)
             print "NLL Oracle Loss before training: %.8f" % t.get_loss()
+        else:
+            batch_idx = 0
+            ltot = 0.
+            for batch in c.get_test_batch(BATCH_SIZE):
+                batch = c.convert_batch_to_input_target(batch)
+                batch_input, batch_targets = batch
+
+                z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                c_z, h_z = np.vsplit(z, 2)
+                g_pre_loss_curr, summary_str = sess.run([g_pre_loss, g_pre_loss_sum], feed_dict={
+                    inputs_pre: batch_input,
+                    initial_c: c_z,
+                    initial_h: h_z,
+                    targets: batch_targets
+                })
+                ltot += g_pre_loss_curr
+                writer.add_summary(summary_str, counter)
+                batch_idx += 1
+            print "Test g_pre_loss before training: %.8f" % (ltot/batch_idx)
 
         for pre_epoch in xrange(PRETRAIN_EPOCHS):
             batch_idx = 1
@@ -186,6 +225,25 @@ with tf.Session() as sess:
             if DATASET == 'oracle':
                 generate_test_file(g_test, sess, t.eval_file)
                 print "NLL Oracle Loss after pre-train epoch %d: %.8f" % (pre_epoch, t.get_loss())
+            else:
+                batch_idx = 0
+                ltot = 0.
+                for batch in c.get_test_batch(BATCH_SIZE):
+                    batch = c.convert_batch_to_input_target(batch)
+                    batch_input, batch_targets = batch
+
+                    z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                    c_z, h_z = np.vsplit(z, 2)
+                    g_pre_loss_curr, summary_str = sess.run([g_pre_loss, g_pre_loss_sum], feed_dict={
+                        inputs_pre: batch_input,
+                        initial_c: c_z,
+                        initial_h: h_z,
+                        targets: batch_targets
+                    })
+                    ltot += g_pre_loss_curr
+                    writer.add_summary(summary_str, counter)
+                    batch_idx += 1
+                print "Test Loss after pre-train epoch %d: %.8f" % (pre_epoch, ltot / batch_idx)
 
             if SAVE_FILE_PRETRAIN:
                 saver.save(sess, SAVE_FILE_PRETRAIN)
@@ -226,6 +284,25 @@ with tf.Session() as sess:
         if DATASET == 'oracle':
             generate_test_file(g_test, sess, t.eval_file)
             print "NLL Oracle Loss after epoch %d: %.8f" % (epoch, t.get_loss())
+        else:
+            batch_idx = 0
+            ltot = 0.
+            for batch in c.get_test_batch(BATCH_SIZE):
+                batch = c.convert_batch_to_input_target(batch)
+                batch_input, batch_targets = batch
+
+                z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                c_z, h_z = np.vsplit(z, 2)
+                g_pre_loss_curr, summary_str = sess.run([g_pre_loss, g_pre_loss_sum], feed_dict={
+                    inputs_pre: batch_input,
+                    initial_c: c_z,
+                    initial_h: h_z,
+                    targets: batch_targets
+                })
+                ltot += g_pre_loss_curr
+                writer.add_summary(summary_str, counter)
+                batch_idx += 1
+            print "Test Loss after epoch %d: %.8f" % (epoch, ltot / batch_idx)
 
     # TODO: sample generated text
 

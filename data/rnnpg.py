@@ -13,7 +13,7 @@ Example code for character-level prediction:
         # do stuff on batch b
 """
 class CharLevelRNNPG(IterableDataset):
-    def __init__(self):
+    def __init__(self, train_valid_split=0.8):
         IterableDataset.__init__(self)
         self.toks = [ 'S']
         self.start_char_idx = 0
@@ -21,6 +21,8 @@ class CharLevelRNNPG(IterableDataset):
         self.idx2char = []
         self.sent_length = 20
         self.line_count = 0
+        self.train_valid_split = train_valid_split
+        self.data = np.zeros((0, 0))
 
         self.load_stats()
         self.load_data()
@@ -47,9 +49,9 @@ class CharLevelRNNPG(IterableDataset):
         self.vocab_size = len(self.idx2char)
 
     def load_data(self):
-        self.train = np.zeros((self.line_count, self.sent_length), dtype='uint16')
+        self.data = np.zeros((self.line_count, self.sent_length), dtype='uint16')
 
-        self.train[:, 0] = self.char2idx['S']
+        self.data[:, 0] = self.char2idx['S']
         with open(fname, 'r') as f:
             for ln, l in enumerate(f):
                 l = l.strip().replace(' ', '').replace('\t', '')
@@ -57,8 +59,15 @@ class CharLevelRNNPG(IterableDataset):
                 # print l,ln
                 for j, w in enumerate(chars):
                     # print j,w
-                    self.train[ln, j+1] = self.char2idx[w]
+                    self.data[ln, j+1] = self.char2idx[w]
 
+        if self.train_valid_split == 1.0:
+            self.train = self.data
+        else:
+            split_point = self.train_valid_split * len(self.data)
+            self.train = self.data[:split_point]
+            self.valid = self.data[split_point:]
+            self.valid = self.test
 
     def get_train_batch(self, batch, **kwargs):
         if 'max_size' not in kwargs:

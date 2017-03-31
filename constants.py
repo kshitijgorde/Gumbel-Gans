@@ -40,6 +40,8 @@ assert ORACLE_TEST_SIZE%BATCH_SIZE == 0
 
 from utils import *
 
-create_dir_if_not_exists('/'.join(LOAD_FILE_PRETRAIN.split('/')[:-1]))
-create_dir_if_not_exists('/'.join(LOAD_FILE_GAN.split('/')[:-1]))
+if LOAD_FILE_PRETRAIN:
+	create_dir_if_not_exists('/'.join(LOAD_FILE_PRETRAIN.split('/')[:-1]))
+if LOAD_FILE_GAN:
+	create_dir_if_not_exists('/'.join(LOAD_FILE_GAN.split('/')[:-1]))
 create_dir_if_not_exists(LOG_LOCATION)

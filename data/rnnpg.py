@@ -64,10 +64,10 @@ class CharLevelRNNPG(IterableDataset):
         if self.train_valid_split == 1.0:
             self.train = self.data
         else:
-            split_point = self.train_valid_split * len(self.data)
+            split_point = (int)(self.train_valid_split * len(self.data))
             self.train = self.data[:split_point]
             self.valid = self.data[split_point:]
-            self.valid = self.test
+            self.test = self.valid
 
     def get_train_batch(self, batch, **kwargs):
         if 'max_size' not in kwargs:

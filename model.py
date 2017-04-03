@@ -18,6 +18,7 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser(description='gumbel-gans')
 
+    parser.add_argument('--dataset', type=str, default=DATASET, choices=['ptb', 'pg', 'oracle'])
     parser.add_argument('--batch_size', type=int, default=BATCH_SIZE)
     parser.add_argument('--pretrain_epochs', type=int, default=PRETRAIN_EPOCHS)
     parser.add_argument('--lr_pretrain', type=float, default=LEARNING_RATE_PRE_G)
@@ -30,6 +31,20 @@ def parse_args():
     parser.add_argument('--num_g', type=int, default=NUM_G)
 
     return parser.parse_args()
+
+args = parse_args()
+
+DATASET = dataset
+BATCH_SIZE = batch_size
+PRETRAIN_EPOCHS = pretrain_epochs
+LEARNING_RATE_PRE_G = lr_pretrain
+HIDDEN_STATE_SIZE = hidden_size_g
+HIDDEN_STATE_SIZE_D = hidden_size_d
+LEARNING_RATE_G = lr_g
+LEARNING_RATE_D = lr_d
+N_EPOCHS = epochs
+NUM_D = num_d
+NUM_G = num_g
 
 SEQ_LENGTH, VOCAB_SIZE, TEST_SIZE, c = None, None, None, None
 

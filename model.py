@@ -13,6 +13,24 @@ from data.rnnpg import CharLevelRNNPG
 from data.oracle import OracleDataloader, OracleVerifier
 from utils import sample_Z
 
+import argparse
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='gumbel-gans')
+
+    parser.add_argument('--batch_size', type=int, default=BATCH_SIZE)
+    parser.add_argument('--pretrain_epochs', type=int, default=PRETRAIN_EPOCHS)
+    parser.add_argument('--lr_pretrain', type=float, default=LEARNING_RATE_PRE_G)
+    parser.add_argument('--hidden_size_g', type=int, default=HIDDEN_STATE_SIZE)
+    parser.add_argument('--hidden_size_d', type=int, default=HIDDEN_STATE_SIZE_D)
+    parser.add_argument('--lr_g', type=float, default=LEARNING_RATE_G)
+    parser.add_argument('--lr_d', type=float, default=LEARNING_RATE_D)
+    parser.add_argument('--epochs', type=int, default=N_EPOCHS)
+    parser.add_argument('--num_d', type=int, default=NUM_D)
+    parser.add_argument('--num_g', type=int, default=NUM_G)
+
+    return parser.parse_args()
+
 SEQ_LENGTH, VOCAB_SIZE, TEST_SIZE, c = None, None, None, None
 
 if DATASET == 'ptb':
@@ -92,8 +110,8 @@ def discriminator(x, reuse=False):
         if reuse:
             scope.reuse_variables()
         lstm = LSTMCell(HIDDEN_STATE_SIZE_D, state_is_tuple=True, reuse=reuse)
-        softmax_w = tf.get_variable("softmax_w", [HIDDEN_STATE_SIZE_D, N_CLASSES])
-        softmax_b = tf.get_variable("softmax_b", [N_CLASSES])
+        softmax_w = tf.get_variable("softmax_w", [HIDDEN_STATE_SIZE_D, N_D_CLASSES])
+        softmax_b = tf.get_variable("softmax_b", [N_D_CLASSES])
         lstm_outputs, _states = tf.nn.dynamic_rnn(lstm, x, dtype=tf.float32, scope=scope)
         return tf.matmul(lstm_outputs[-1], softmax_w) + softmax_b
 

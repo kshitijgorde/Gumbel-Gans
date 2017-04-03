@@ -26,22 +26,25 @@ LEARNING_RATE_PRE_G = 0.001
 PRETRAIN_CHK_FOLDER = './checkpoints/or_p_h32_le-3_e20/'
 SAVE_FILE_PRETRAIN = PRETRAIN_CHK_FOLDER + 'or_p_h32_le-3.chk'
 LOAD_FILE_PRETRAIN = SAVE_FILE_PRETRAIN
+NUM_D = 1
+NUM_G = 3
 
 GAN_CHK_FOLDER = './checkpoints/or_g32_d32_l5e-5/'
 SAVE_FILE_GAN = GAN_CHK_FOLDER + 'chk'
 LOAD_FILE_GAN = SAVE_FILE_GAN
 
-LOG_LOCATION = './logs/or_g32_d32_l5e-5/'
+LOG_LOCATION = './logs/pg_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g512_d512_p0_l5e-5/'
 
 # sanity checks:
 DATASET_LIST = ['ptb', 'pg', 'oracle']
 assert DATASET in DATASET_LIST
 assert ORACLE_TEST_SIZE%BATCH_SIZE == 0
+assert NUM_G==1  or NUM_D==1
 
 from utils import *
 
-if LOAD_FILE_PRETRAIN:
-	create_dir_if_not_exists('/'.join(LOAD_FILE_PRETRAIN.split('/')[:-1]))
-if LOAD_FILE_GAN:
-	create_dir_if_not_exists('/'.join(LOAD_FILE_GAN.split('/')[:-1]))
+if SAVE_FILE_PRETRAIN:
+	create_dir_if_not_exists('/'.join(SAVE_FILE_PRETRAIN.split('/')[:-1]))
+if SAVE_FILE_GAN:
+	create_dir_if_not_exists('/'.join(SAVE_FILE_GAN.split('/')[:-1]))
 create_dir_if_not_exists(LOG_LOCATION)

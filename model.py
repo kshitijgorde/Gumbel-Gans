@@ -180,7 +180,7 @@ with tf.Session() as sess:
                 ltot += g_pre_loss_curr
                 writer.add_summary(summary_str, counter)
                 batch_idx += 1
-            print "Test g_pre_loss: %.8f" % (ltot/batch_idx)
+            print "Test g_pre_loss after loading model: %.8f" % (ltot/batch_idx)
     else:
         if DATASET == 'oracle':
             generate_test_file(g_test, sess, t.eval_file)
@@ -261,16 +261,17 @@ with tf.Session() as sess:
             batch = c.convert_batch_to_input_target(batch)
             _, batch_targets = batch
 
-            z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
-            c_z, h_z = np.vsplit(z, 2)
-            _, d_loss_curr, summary_str = sess.run([d_optim, d_loss, d_loss_sum], feed_dict={
-                inputs: batch_targets,
-                initial_c: c_z,
-                initial_h: h_z
-            })
-            writer.add_summary(summary_str, counter)
+            if batch_idx % NUM_G == 0:
+                z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                c_z, h_z = np.vsplit(z, 2)
+                _, d_loss_curr, summary_str = sess.run([d_optim, d_loss, d_loss_sum], feed_dict={
+                    inputs: batch_targets,
+                    initial_c: c_z,
+                    initial_h: h_z
+                })
+                writer.add_summary(summary_str, counter)
 
-            if batch_idx % 5 != 0:
+            if batch_idx % NUM_D != 0:
                 continue
 
             z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)

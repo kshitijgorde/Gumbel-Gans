@@ -39,21 +39,3 @@ DATASET_LIST = ['ptb', 'pg', 'oracle']
 assert DATASET in DATASET_LIST
 assert ORACLE_TEST_SIZE%BATCH_SIZE == 0
 assert NUM_G==1  or NUM_D==1
-
-from utils import *
-
-LOG_LOCATION = './logs/' + DATASET_LIST[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
-
-PRETRAIN_CHK_FOLDER = './checkpoints/'  +  DATASET_LIST[:2] + '_p_h' + HIDDEN_STATE_SIZE + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_e' + str(PRETRAIN_EPOCHS) + '/'
-SAVE_FILE_PRETRAIN = PRETRAIN_CHK_FOLDER + DATASET_LIST[:2] + '_p_h' + HIDDEN_STATE_SIZE + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '.chk'
-LOAD_FILE_PRETRAIN = SAVE_FILE_PRETRAIN
-
-GAN_CHK_FOLDER = './checkpoints/' +  DATASET_LIST[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
-SAVE_FILE_GAN = GAN_CHK_FOLDER + 'chk'
-LOAD_FILE_GAN = SAVE_FILE_GAN
-
-if SAVE_FILE_PRETRAIN:
-	create_dir_if_not_exists('/'.join(SAVE_FILE_PRETRAIN.split('/')[:-1]))
-if SAVE_FILE_GAN:
-	create_dir_if_not_exists('/'.join(SAVE_FILE_GAN.split('/')[:-1]))
-create_dir_if_not_exists(LOG_LOCATION)

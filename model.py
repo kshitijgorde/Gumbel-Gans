@@ -11,7 +11,7 @@ import os
 from data.ptb import CharLevelPTB
 from data.rnnpg import CharLevelRNNPG
 from data.oracle import OracleDataloader, OracleVerifier
-from utils import sample_Z
+from utils import *
 
 import argparse
 
@@ -45,6 +45,22 @@ LEARNING_RATE_D = lr_d
 N_EPOCHS = epochs
 NUM_D = num_d
 NUM_G = num_g
+
+# define other constants
+LOG_LOCATION = './logs/' + DATASET_LIST[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
+PRETRAIN_CHK_FOLDER = './checkpoints/'  +  DATASET_LIST[:2] + '_p_h' + HIDDEN_STATE_SIZE + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_e' + str(PRETRAIN_EPOCHS) + '/'
+SAVE_FILE_PRETRAIN = PRETRAIN_CHK_FOLDER + DATASET_LIST[:2] + '_p_h' + HIDDEN_STATE_SIZE + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '.chk'
+LOAD_FILE_PRETRAIN = SAVE_FILE_PRETRAIN
+GAN_CHK_FOLDER = './checkpoints/' +  DATASET_LIST[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
+SAVE_FILE_GAN = GAN_CHK_FOLDER + 'chk'
+LOAD_FILE_GAN = SAVE_FILE_GAN
+
+# create dirs that don't exist
+if SAVE_FILE_PRETRAIN:
+    create_dir_if_not_exists('/'.join(SAVE_FILE_PRETRAIN.split('/')[:-1]))
+if SAVE_FILE_GAN:
+    create_dir_if_not_exists('/'.join(SAVE_FILE_GAN.split('/')[:-1]))
+create_dir_if_not_exists(LOG_LOCATION)
 
 SEQ_LENGTH, VOCAB_SIZE, TEST_SIZE, c = None, None, None, None
 

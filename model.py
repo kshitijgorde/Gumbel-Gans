@@ -57,6 +57,28 @@ GAN_CHK_FOLDER = './checkpoints/' +  DATASET[:2] + '_g' + str(NUM_G) + 'd' + str
 SAVE_FILE_GAN = GAN_CHK_FOLDER + 'chk'
 LOAD_FILE_GAN = SAVE_FILE_GAN
 
+def print_hyperparam_consts():
+    print('DATASET: ' + str(DATASET))
+    print('BATCH_SIZE: ' + str(BATCH_SIZE))
+    print('PRETRAIN_EPOCHS: ' + str(PRETRAIN_EPOCHS))
+    print('LEARNING_RATE_PRE_G: ' + str(LEARNING_RATE_PRE_G))
+    print('HIDDEN_STATE_SIZE: ' + str(HIDDEN_STATE_SIZE))
+    print('HIDDEN_STATE_SIZE_D: ' + str(HIDDEN_STATE_SIZE_D))
+    print('LEARNING_RATE_G: ' + str(LEARNING_RATE_G))
+    print('LEARNING_RATE_D: ' + str(LEARNING_RATE_D))
+    print('N_EPOCHS: ' + str(N_EPOCHS))
+    print('NUM_D: ' + str(NUM_D))
+    print('NUM_G: ' + str(NUM_G))
+    print('LOG_LOCATION: ' + str(LOG_LOCATION))
+    print('PRETRAIN_CHK_FOLDER: ' + str(PRETRAIN_CHK_FOLDER))
+    print('SAVE_FILE_PRETRAIN: ' + str(SAVE_FILE_PRETRAIN))
+    print('LOAD_FILE_PRETRAIN: ' + str(LOAD_FILE_PRETRAIN))
+    print('GAN_CHK_FOLDER: ' + str(GAN_CHK_FOLDER))
+    print('SAVE_FILE_GAN: ' + str(SAVE_FILE_GAN))
+    print('LOAD_FILE_GAN: ' + str(LOAD_FILE_GAN))
+
+print_hyperparam_consts()
+
 # create dirs that don't exist
 if SAVE_FILE_PRETRAIN:
     create_dir_if_not_exists('/'.join(SAVE_FILE_PRETRAIN.split('/')[:-1]))

@@ -34,24 +34,26 @@ def parse_args():
 
 args = parse_args()
 
-DATASET = dataset
-BATCH_SIZE = batch_size
-PRETRAIN_EPOCHS = pretrain_epochs
-LEARNING_RATE_PRE_G = lr_pretrain
-HIDDEN_STATE_SIZE = hidden_size_g
-HIDDEN_STATE_SIZE_D = hidden_size_d
-LEARNING_RATE_G = lr_g
-LEARNING_RATE_D = lr_d
-N_EPOCHS = epochs
-NUM_D = num_d
-NUM_G = num_g
+DATASET = args.dataset
+BATCH_SIZE = args.batch_size
+PRETRAIN_EPOCHS = args.pretrain_epochs
+LEARNING_RATE_PRE_G = args.lr_pretrain
+HIDDEN_STATE_SIZE = args.hidden_size_g
+HIDDEN_STATE_SIZE_D = args.hidden_size_d
+LEARNING_RATE_G = args.lr_g
+LEARNING_RATE_D = args.lr_d
+N_EPOCHS = args.epochs
+NUM_D = args.num_d
+NUM_G = args.num_g
+
+from decimal import Decimal
 
 # define other constants
-LOG_LOCATION = './logs/' + DATASET_LIST[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
-PRETRAIN_CHK_FOLDER = './checkpoints/'  +  DATASET_LIST[:2] + '_p_h' + HIDDEN_STATE_SIZE + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_e' + str(PRETRAIN_EPOCHS) + '/'
-SAVE_FILE_PRETRAIN = PRETRAIN_CHK_FOLDER + DATASET_LIST[:2] + '_p_h' + HIDDEN_STATE_SIZE + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '.chk'
+LOG_LOCATION = './logs/' + DATASET[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
+PRETRAIN_CHK_FOLDER = './checkpoints/'  +  DATASET[:2] + '_p_h' + str(HIDDEN_STATE_SIZE) + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_e' + str(PRETRAIN_EPOCHS) + '/'
+SAVE_FILE_PRETRAIN = PRETRAIN_CHK_FOLDER + DATASET[:2] + '_p_h' + str(HIDDEN_STATE_SIZE) + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '.chk'
 LOAD_FILE_PRETRAIN = SAVE_FILE_PRETRAIN
-GAN_CHK_FOLDER = './checkpoints/' +  DATASET_LIST[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
+GAN_CHK_FOLDER = './checkpoints/' +  DATASET[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
 SAVE_FILE_GAN = GAN_CHK_FOLDER + 'chk'
 LOAD_FILE_GAN = SAVE_FILE_GAN
 

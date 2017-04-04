@@ -221,6 +221,24 @@ d_optim = tf.train.GradientDescentOptimizer(LEARNING_RATE_D).minimize(d_loss, va
 g_optim = tf.train.AdamOptimizer(LEARNING_RATE_G, name="Adam_g").minimize(g_loss, var_list=g_vars)
 
 with tf.Session() as sess:
+
+    def generate_samples():
+        z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+        c_z, h_z = np.vsplit(z, 2)
+
+        samples = sess.run(g, feed_dict={
+            initial_c: c_z,
+            initial_h: h_z
+        })
+
+        decoded_samples = []
+        for i in xrange(len(samples)):
+            decoded = []
+            for j in xrange(len(samples[i])):
+                decoded.append(c.idx2char[samples[i][j]])
+            decoded_samples.append(tuple(decoded))
+        return decoded_samples
+
     if DATASET == 'oracle':
         t=OracleVerifier(BATCH_SIZE, sess)
     tf.initialize_all_variables().run()
@@ -381,7 +399,10 @@ with tf.Session() as sess:
                 batch_idx += 1
             print "Test Loss after epoch %d: %.8f" % (epoch, ltot / batch_idx)
 
-    # TODO: sample generated text
-
-
-
+        samples = []
+        for i in xrange(10):
+            samples.extend(generate_samples())
+            with open('samples_{}.txt'.format(epoch), 'w') as f:
+                for s in samples:
+                    s = "".join(s)
+                    f.write(s + "\n")

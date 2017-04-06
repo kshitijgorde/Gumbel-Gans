@@ -24,7 +24,7 @@ def orthogonal_initializer(scale=1.0, seed=None, dtype=tf.float32):
       An initializer for a weight matrix.
     """
 
-    def _initializer(shape, dtype=dtype):
+    def _initializer(shape, dtype=dtype, partition_info=None):
         flat = (shape[0], np.prod(shape[1:]))
         a = np.random.normal(0.0, 1.0, flat)
         u, _, v = np.linalg.svd(a, full_matrices=False)

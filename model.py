@@ -130,7 +130,7 @@ def generator(initial_c, initial_h, mode='gan', inputs=None, targets=None, reuse
         first_input[:, c.start_char_idx] = 1
         first_input = tf.constant(first_input, dtype=tf.float32)
 
-        cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True, reuse=reuse, initializer=orthogonal_initializer)
+        cell = LSTMCell(HIDDEN_STATE_SIZE, state_is_tuple=True, reuse=reuse, initializer=orthogonal_initializer())
         if mode == 'pretrain':
             inputs = tf.unstack(inputs, axis=1)
             outputs, states = legacy_seq2seq.rnn_decoder(decoder_inputs=inputs,
@@ -166,7 +166,7 @@ def discriminator(x, reuse=False):
     with tf.variable_scope("discriminator") as scope:
         if reuse:
             scope.reuse_variables()
-        lstm = LSTMCell(HIDDEN_STATE_SIZE_D, state_is_tuple=True, reuse=reuse, initializer=orthogonal_initializer)
+        lstm = LSTMCell(HIDDEN_STATE_SIZE_D, state_is_tuple=True, reuse=reuse, initializer=orthogonal_initializer())
         softmax_w = tf.get_variable("softmax_w", [HIDDEN_STATE_SIZE_D, N_D_CLASSES])
         softmax_b = tf.get_variable("softmax_b", [N_D_CLASSES])
         lstm_outputs, _states = tf.nn.dynamic_rnn(lstm, x, dtype=tf.float32, scope=scope)

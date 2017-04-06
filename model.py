@@ -249,7 +249,7 @@ with tf.Session() as sess:
 
     saver = tf.train.Saver()
 
-    if LOAD_FILE_PRETRAIN and tf.train.latest_checkpoint(PRETRAIN_CHK_FOLDER) == LOAD_FILE_PRETRAIN:
+    if LOAD_FILE_PRETRAIN:
         # saver = tf.train.import_meta_graph(LOAD_FILE_PRETRAIN + '.meta')
         saver.restore(sess, LOAD_FILE_PRETRAIN)
         if DATASET == 'oracle':

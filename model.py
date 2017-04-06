@@ -54,7 +54,7 @@ from decimal import Decimal
 LOG_LOCATION = './logs/' + DATASET[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
 PRETRAIN_CHK_FOLDER = './checkpoints/'  +  DATASET[:2] + '_p_h' + str(HIDDEN_STATE_SIZE) + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_e' + str(PRETRAIN_EPOCHS) + '/'
 SAVE_FILE_PRETRAIN = PRETRAIN_CHK_FOLDER + DATASET[:2] + '_p_h' + str(HIDDEN_STATE_SIZE) + '_l' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '.chk'
-LOAD_FILE_PRETRAIN = SAVE_FILE_PRETRAIN
+LOAD_FILE_PRETRAIN = SAVE_FILE_PRETRAIN + 'b'
 GAN_CHK_FOLDER = './checkpoints/' +  DATASET[:2] + '_g' + str(NUM_G) + 'd' + str(NUM_D) + '_g' + str(HIDDEN_STATE_SIZE) + '_d' + str(HIDDEN_STATE_SIZE_D) + '_pe' + str(PRETRAIN_EPOCHS) + '_pl' + str("{:.0e}".format(Decimal(LEARNING_RATE_PRE_G))) + '_l'+ str("{:.0e}".format(Decimal(LEARNING_RATE_G))) + '/'
 SAVE_FILE_GAN = GAN_CHK_FOLDER + 'chk'
 LOAD_FILE_GAN = SAVE_FILE_GAN
@@ -334,6 +334,7 @@ with tf.Session() as sess:
                 batch_idx += 1
             print "Test g_pre_loss before training: %.8f" % (ltot/batch_idx)
 
+        best_prtr_val_loss = float('Inf')
         for pre_epoch in xrange(PRETRAIN_EPOCHS):
             batch_idx = 0
             train_ltot = 0.
@@ -395,6 +396,9 @@ with tf.Session() as sess:
                     batch_idx += 1
                 print "Test Loss after pre-train epoch %d: %.8f" % (pre_epoch, ltot / batch_idx)
 
+            if SAVE_FILE_PRETRAIN and (ltot / batch_idx) < best_prtr_val_loss:
+                saver.save(sess, SAVE_FILE_PRETRAIN + 'b')
+                best_prtr_val_loss = (ltot / batch_idx)
             if SAVE_FILE_PRETRAIN:
                 saver.save(sess, SAVE_FILE_PRETRAIN)
 

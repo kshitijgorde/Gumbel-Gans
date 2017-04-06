@@ -256,6 +256,24 @@ with tf.Session() as sess:
         else:
             batch_idx = 0
             ltot = 0.
+            for batch in c.get_valid_batch(BATCH_SIZE):
+                batch = c.convert_batch_to_input_target(batch)
+                batch_input, batch_targets = batch
+
+                z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                c_z, h_z = np.vsplit(z, 2)
+                g_pre_loss_curr, summary_str = sess.run([g_pre_loss, g_pre_loss_sum], feed_dict={
+                    inputs_pre: batch_input,
+                    initial_c: c_z,
+                    initial_h: h_z,
+                    targets: batch_targets
+                })
+                ltot += g_pre_loss_curr
+                writer.add_summary(summary_str, counter)
+                batch_idx += 1
+            print "Valid g_pre_loss after loading model: %.8f" % (ltot/batch_idx)
+            batch_idx = 0
+            ltot = 0.
             for batch in c.get_test_batch(BATCH_SIZE):
                 batch = c.convert_batch_to_input_target(batch)
                 batch_input, batch_targets = batch
@@ -277,6 +295,24 @@ with tf.Session() as sess:
             generate_test_file(g_test, sess, t.eval_file)
             print "NLL Oracle Loss before training: %.8f" % t.get_loss()
         else:
+            batch_idx = 0
+            ltot = 0.
+            for batch in c.get_valid_batch(BATCH_SIZE):
+                batch = c.convert_batch_to_input_target(batch)
+                batch_input, batch_targets = batch
+
+                z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                c_z, h_z = np.vsplit(z, 2)
+                g_pre_loss_curr, summary_str = sess.run([g_pre_loss, g_pre_loss_sum], feed_dict={
+                    inputs_pre: batch_input,
+                    initial_c: c_z,
+                    initial_h: h_z,
+                    targets: batch_targets
+                })
+                ltot += g_pre_loss_curr
+                writer.add_summary(summary_str, counter)
+                batch_idx += 1
+            print "Valid g_pre_loss before training: %.8f" % (ltot/batch_idx)
             batch_idx = 0
             ltot = 0.
             for batch in c.get_test_batch(BATCH_SIZE):
@@ -320,6 +356,24 @@ with tf.Session() as sess:
                 generate_test_file(g_test, sess, t.eval_file)
                 print "NLL Oracle Loss after pre-train epoch %d: %.8f" % (pre_epoch, t.get_loss())
             else:
+                batch_idx = 0
+                ltot = 0.
+                for batch in c.get_valid_batch(BATCH_SIZE):
+                    batch = c.convert_batch_to_input_target(batch)
+                    batch_input, batch_targets = batch
+
+                    z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                    c_z, h_z = np.vsplit(z, 2)
+                    g_pre_loss_curr, summary_str = sess.run([g_pre_loss, g_pre_loss_sum], feed_dict={
+                        inputs_pre: batch_input,
+                        initial_c: c_z,
+                        initial_h: h_z,
+                        targets: batch_targets
+                    })
+                    ltot += g_pre_loss_curr
+                    writer.add_summary(summary_str, counter)
+                    batch_idx += 1
+                print "Valid Loss after pre-train epoch %d: %.8f" % (pre_epoch, ltot / batch_idx)
                 batch_idx = 0
                 ltot = 0.
                 for batch in c.get_test_batch(BATCH_SIZE):
@@ -380,6 +434,24 @@ with tf.Session() as sess:
             generate_test_file(g_test, sess, t.eval_file)
             print "NLL Oracle Loss after epoch %d: %.8f" % (epoch, t.get_loss())
         else:
+            batch_idx = 0
+            ltot = 0.
+            for batch in c.get_valid_batch(BATCH_SIZE):
+                batch = c.convert_batch_to_input_target(batch)
+                batch_input, batch_targets = batch
+
+                z = sample_Z(BATCH_SIZE * 2, HIDDEN_STATE_SIZE)
+                c_z, h_z = np.vsplit(z, 2)
+                g_pre_loss_curr, summary_str = sess.run([g_pre_loss, g_pre_loss_sum], feed_dict={
+                    inputs_pre: batch_input,
+                    initial_c: c_z,
+                    initial_h: h_z,
+                    targets: batch_targets
+                })
+                ltot += g_pre_loss_curr
+                writer.add_summary(summary_str, counter)
+                batch_idx += 1
+            print "Valid Loss after epoch %d: %.8f" % (epoch, ltot / batch_idx)
             batch_idx = 0
             ltot = 0.
             for batch in c.get_test_batch(BATCH_SIZE):

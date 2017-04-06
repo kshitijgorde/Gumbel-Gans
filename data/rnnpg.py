@@ -59,7 +59,7 @@ class CharLevelRNNPG(IterableDataset):
             for ln, l in enumerate(f):
                 l = l.strip().replace(' ', '').replace('\t', '')
                 chars = [str(l[::-1][i:i+3][::-1]) for i in range(0, len(l), 3)][::-1]
-                # print l,ln
+                # This could probably be made quicker by vectorizing, but it ought to be ok, since it's a one-time cost
                 for j, w in enumerate(chars):
                     # print j,w
                     self.data[ln, j+1] = self.char2idx[w]

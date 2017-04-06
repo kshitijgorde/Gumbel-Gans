@@ -106,26 +106,18 @@ class CharLevelPTB(IterableDataset):
         self.vocab_size = len(self.idx2char)
 
     def load_data(self):
-        if  os.path.exists(self.file_location):
-            self.load_from_file()
-        else:
-            self.generate_data()
-            self.save_data()
-        self.test_onehot_to_string(self.train, self.TRAIN_FIRST_CHARS[:self.seqlen])
-        self.test_onehot_to_string(self.valid, self.VAL_FIRST_CHARS[:self.seqlen])
-        self.test_onehot_to_string(self.test, self.TEST_FIRST_CHARS[:self.seqlen])
+        self.generate_data()
+        self.generate_valid_test()
 
     def generate_data(self):
-        train_list = []
-        valid_list = []
-        test_list = []
+        self.train_list = []
+        self.valid_list = []
+        self.test_list = []
 
         file_mapping = {}
-        file_mapping[files[0]] = valid_list
-        file_mapping[files[1]] = train_list
-        file_mapping[files[2]] = test_list
-
-        # import pdb
+        file_mapping[files[0]] = self.valid_list
+        file_mapping[files[1]] = self.train_list
+        file_mapping[files[2]] = self.test_list
 
         for fname in files:
             with open(fname, 'r') as f:
@@ -136,76 +128,38 @@ class CharLevelPTB(IterableDataset):
                     chars = list(l)
                     file_mapping[fname] += [self.char2idx[w] for w in chars]
 
-        train_list = np.asarray(train_list, dtype='uint16')
-        valid_list = np.asarray(valid_list, dtype='uint16')
-        test_list = np.asarray(test_list, dtype='uint16')
+        self.train_list = np.asarray(self.train_list, dtype='uint16')
+        self.valid_list = np.asarray(self.valid_list, dtype='uint16')
+        self.test_list = np.asarray(self.test_list, dtype='uint16')
 
-        def generate_sequences(dest, src):
-            for i in xrange(dest.shape[0]):
-                dest[i] = self.one_hot(src[i:i+dest.shape[1]])
+    def generate_valid_test(self):
+        num_batches = (len(self.valid_list) // self.seqlen)
+        self.valid = self.valid_list[:num_batches*self.seqlen].reshape((-1, self.seqlen))
 
-        self.train = np.zeros((len(train_list)-self.seqlen+1, self.seqlen, self.vocab_size), dtype='uint16')
-        generate_sequences(self.train, train_list)
-        self.valid = np.zeros((len(valid_list)-self.seqlen+1, self.seqlen, self.vocab_size), dtype='uint16')
-        generate_sequences(self.valid, valid_list)
-        self.test = np.zeros((len(test_list)-self.seqlen+1, self.seqlen, self.vocab_size), dtype='uint16')
-        generate_sequences(self.test, test_list)
-        # pdb.set_trace()
+        num_batches = (len(self.test_list) // self.seqlen)
+        self.test = self.test_list[:num_batches*self.seqlen].reshape((-1, self.seqlen))
 
-    def save_data(self):
-        np.savez(self.file_location, train=self.train, valid=self.valid, test=self.test)
-
-    def load_from_file(self):
-        try:
-            a = np.load(self.file_location)
-        except MemoryError:
-            a = np.load(self.file_location, mmap_mode='r')
-        self.train = a['train']
-        self.valid = a['valid']
-        self.test = a['test']
-
-    def test_onehot_to_string(self, onehot, string):
+    def test_onehot_to_string(self, onehot):
         '''
-        given the one-hot encoded dataset and a string, ensures the first sequence matches the string
+        given the one-hot encoded dataset, return the text string
         '''
-        assert ''.join([self.idx2char[i] for i in np.where(onehot[0,:])[-1]]) == string
+        return ''.join([self.idx2char[i] for i in np.where(onehot[0,:])[-1]])
 
-    def get_train_batch(self, batch, **kwargs):
-        kwargs['one_hot'] = False
-        return super(CharLevelRNNPG, self).get_train_batch(batch, **kwargs)
+    def get_train_batch(self, batch, augment=True, **kwargs):
+        if augment:
+            s_ind = np.random.randint(0, self.seqlen)
+        else:
+            s_ind = 0
+        num_batches = ((len(self.train_list)-s_ind) // self.seqlen)
+        self.train = self.train_list[s_ind:s_ind+num_batches*self.seqlen].reshape((-1, self.seqlen))
+
+        for b in super(CharLevelPTB, self).get_train_batch(batch, **kwargs):
+            yield b
 
     def get_valid_batch(self, batch, **kwargs):
-        kwargs['one_hot'] = False
-        return super(CharLevelRNNPG, self).get_valid_batch(batch, **kwargs)
+        for b in super(CharLevelPTB, self).get_valid_batch(batch, **kwargs):
+            yield b
 
     def get_test_batch(self, batch, **kwargs):
-        kwargs['one_hot'] = False
-        return super(CharLevelRNNPG, self).get_test_batch(batch, **kwargs)
-
-    # def window_stack(self, a, num_windows=3, stepsize=1):
-    #     # I<3SO http://stackoverflow.com/a/15722507
-    #     n = a.shape[0]
-    #     return np.hstack( a[i:1+n+i-num_windows:stepsize] for i in range(0,num_windows) )
-
-    # def store_onehot_sequence(self, dest, index, numd_string):
-    #     for j in range(len(dest)):
-    #         dest[j] = self.one_hot(numd_string[index+j:index+j+self.seqlen])
-
-    # def get_train_batch(self, batchsize):
-    #     tr = np.zeros((batchsize, self.seqlen, self.vocab_size), dtype='uint16')
-    #     for i in xrange(0, len(self.train_list)-self.seqlen - batchsize + 1, batchsize):
-    #         w = self.window_stack(self.train_list[i:i+batchsize+self.seqlen-1], batchsize).reshape((batchsize, self.seqlen))
-    #         yield self.one_hot(w)
-
-    # def get_valid_batch(self, batchsize):
-    #     va = np.zeros((batchsize, self.seqlen, self.vocab_size), dtype='uint16')
-    #     for i in xrange(0, len(self.valid_list)-self.seqlen - batchsize + 1, batchsize):
-    #         self.store_onehot_sequence(va, i, self.valid_list)
-    #         yield va
-
-    # def get_test_batch(self, batchsize):
-    #     te = np.zeros((batchsize, self.seqlen, self.vocab_size), dtype='uint16')
-    #     for i in xrange(0, len(self.test_list)-self.seqlen - batchsize + 1, batchsize):
-    #         self.store_onehot_sequence(te, i, self.test_list)
-    #         yield te
-
+        for b in super(CharLevelPTB, self).get_test_batch(batch, **kwargs):
+            yield b

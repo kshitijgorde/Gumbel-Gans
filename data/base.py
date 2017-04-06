@@ -1,5 +1,7 @@
 import numpy as np
 
+# TODO: This could be made cleaner by making get_train_batch(), get_valid_batch(), and get_test_batch()
+# call a common get_batch() method. Ensure re-factoring doesn't break sub-classes
 class IterableDataset(object):
     def __init__(self):
         self.vocab_size = 0
